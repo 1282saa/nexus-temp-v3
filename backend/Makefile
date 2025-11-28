@@ -177,16 +177,10 @@ requirements: ## requirements.txt 업데이트
 	. $(VENV)/bin/activate && pip freeze | grep -v pkg-resources > requirements-freeze.txt
 	@echo "$(GREEN)✅ requirements-freeze.txt 생성 완료$(NC)"
 
-.PHONY: docker-build
-docker-build: ## Docker 이미지 빌드 (Lambda 환경 테스트용)
-	@echo "$(YELLOW)🐳 Docker 이미지 빌드 중...$(NC)"
-	docker build -t $(SERVICE_NAME):$(STAGE) .
-	@echo "$(GREEN)✅ Docker 이미지 빌드 완료$(NC)"
-
-.PHONY: docker-run
-docker-run: ## Docker 컨테이너 실행
-	@echo "$(YELLOW)🐳 Docker 컨테이너 실행 중...$(NC)"
-	docker run -p 9000:8080 --env-file .env.$(STAGE) $(SERVICE_NAME):$(STAGE)
+# Docker 관련 명령어 제거 (Serverless Framework 사용)
+# Docker가 필요한 경우:
+# - serverless deploy --docker 옵션 사용
+# - Lambda Layer 빌드 시 layers/build.sh 사용
 
 .PHONY: all
 all: setup install validate ## 전체 설정 및 검증

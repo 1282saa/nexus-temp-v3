@@ -106,19 +106,19 @@ zip -r lambda-deployment.zip . \
 
 ## 🤖 AI 모델 통합
 
-Amazon Bedrock을 통한 Claude 모델 사용:
+Amazon Bedrock을 통한 Claude 4.1 Opus 사용:
 ```python
-# lib/bedrock_client_enhanced.py
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+# config/aws.py
+MODEL_ID = "us.anthropic.claude-opus-4-1-20250805-v1:0"  # Claude 4.1 Opus
 ```
 
 ## 🔧 환경 변수
 
 ```env
 # 서비스 설정
-SERVICE_NAME=my-nexus
+SERVICE_NAME=nexus
 ENVIRONMENT=dev
-AWS_REGION=us-east-1
+AWS_REGION=us-east-1  # 버지니아 리전
 
 # 테이블 이름 (자동 생성)
 CONVERSATIONS_TABLE=${SERVICE_NAME}-conversations-${ENVIRONMENT}
