@@ -11,8 +11,11 @@ import os
 logger = logging.getLogger(__name__)
 
 # DynamoDB 설정
-dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-conversations_table = dynamodb.Table(os.environ.get('CONVERSATIONS_TABLE', 'f1-conversations-two'))
+from config.settings import settings
+from config.database import get_table_name
+
+dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+conversations_table = dynamodb.Table(get_table_name('conversations'))
 
 class ConversationManager:
     """대화 내역을 DynamoDB에서 관리"""

@@ -88,9 +88,12 @@ class ConversationRepository:
     
     def __init__(self, table_name: Optional[str] = None):
         import os
-        self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-        # f1 서비스용 테이블 설정
-        self.table_name = table_name or os.environ.get('CONVERSATIONS_TABLE', 'f1-conversations-two')
+        from config.settings import settings
+        from config.database import get_table_name
+        
+        self.dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+        # 동적 테이블 이름 생성 (하드코딩 제거)
+        self.table_name = table_name or get_table_name('conversations')
         self.table = self.dynamodb.Table(self.table_name)
         logger.info(f"ConversationRepository initialized with table: {self.table_name}")
     

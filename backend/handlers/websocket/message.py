@@ -227,8 +227,10 @@ def send_message_to_client(connection_id, message, apigateway_client):
         logger.warning(f"Connection {connection_id} is gone")
         # 연결이 끊어진 경우 정리
         try:
-            dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-            connections_table = dynamodb.Table(os.environ.get('WEBSOCKET_TABLE', 'f1-websocket-connections-two'))
+            from config.settings import settings
+            from config.database import get_table_name
+            dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+            connections_table = dynamodb.Table(get_table_name('websocket_connections'))
             connections_table.delete_item(Key={'connectionId': connection_id})
         except:
             pass

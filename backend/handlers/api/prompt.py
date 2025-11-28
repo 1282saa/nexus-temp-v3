@@ -12,17 +12,19 @@ from boto3.dynamodb.conditions import Key
 
 from utils.logger import setup_logger
 from utils.response import APIResponse
+from config.settings import settings
+from config.database import get_table_name
 
 logger = setup_logger(__name__)
 
 # DynamoDB 테이블 초기화
-logger = setup_logger(__name__)
 logger.info("Initializing DynamoDB resources...")
 
 try:
-    dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-    prompts_table_name = os.environ.get('PROMPTS_TABLE', 'f1-prompts-two')
-    files_table_name = os.environ.get('FILES_TABLE', 'f1-files-two')
+    dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+    # 동적 테이블 이름 생성 (하드코딩 제거)
+    prompts_table_name = get_table_name('prompts')
+    files_table_name = get_table_name('files')
 
     logger.info(f"Using prompts table: {prompts_table_name}")
     logger.info(f"Using files table: {files_table_name}")

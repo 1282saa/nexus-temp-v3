@@ -61,13 +61,16 @@ GUARDRAIL_CONFIG = {
     'enabled': os.environ.get('GUARDRAIL_ENABLED', 'true').lower() == 'true'
 }
 
-# DynamoDB 테이블 설정
+# DynamoDB 테이블 설정 (동적 생성)
+from .settings import settings
+from .database import get_table_name
+
 DYNAMODB_TABLES = {
-    'conversations': os.environ.get('CONVERSATIONS_TABLE', 'f1-conversations-two'),
-    'prompts': os.environ.get('PROMPTS_TABLE', 'f1-prompts-two'),
-    'files': os.environ.get('FILES_TABLE', 'f1-files-two'),
-    'usage': os.environ.get('USAGE_TABLE', 'f1-usage-two'),
-    'connections': os.environ.get('CONNECTIONS_TABLE', 'f1-websocket-connections-two')
+    'conversations': get_table_name('conversations'),
+    'prompts': get_table_name('prompts'),
+    'files': get_table_name('files'),
+    'usage': get_table_name('usage'),
+    'connections': get_table_name('websocket_connections')
 }
 
 # 엔진 타입 설정

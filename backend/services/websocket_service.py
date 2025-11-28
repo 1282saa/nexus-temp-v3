@@ -26,11 +26,14 @@ PROMPT_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
 CACHE_TTL = 300  # 5분 (초 단위)
 
 # DynamoDB 클라이언트 - 프롬프트 테이블 접근용
-dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+from config.settings import settings
+from config.database import get_table_name
 
-# f1 서비스용 테이블 설정
-PROMPTS_TABLE_NAME = os.environ.get('PROMPTS_TABLE', 'f1-prompts-two')
-FILES_TABLE_NAME = os.environ.get('FILES_TABLE', 'f1-files-two')
+dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+
+# 동적 테이블 이름 생성 (하드코딩 제거)
+PROMPTS_TABLE_NAME = get_table_name('prompts')
+FILES_TABLE_NAME = get_table_name('files')
 
 prompts_table = dynamodb.Table(PROMPTS_TABLE_NAME)
 files_table = dynamodb.Table(FILES_TABLE_NAME)
@@ -170,7 +173,7 @@ class WebSocketService:
 
                 # files 테이블에서 관련 파일들 로드
                 try:
-                    # f1-files-two 테이블은 전체 스캔 (현재 파일이 1개만 있음)
+                    # files 테이블 전체 스캔 (현재 파일이 1개만 있음)
                     files_response = self.files_table.scan()
 
                     if 'Items' in files_response:
@@ -288,7 +291,7 @@ class WebSocketService:
             logger.info(f"Tokens - Input: {input_tokens}, Output: {output_tokens}")
 
             # DynamoDB에 사용량 저장
-            usage_table = dynamodb.Table(os.environ.get('USAGE_TABLE', 'f1-usage-two'))
+            usage_table = dynamodb.Table(get_table_name('usage'))
             today = datetime.now().strftime('%Y-%m-%d')
 
             # date 키 생성 (테이블 스키마: userId, date)

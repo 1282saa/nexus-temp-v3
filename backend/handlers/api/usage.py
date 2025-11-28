@@ -15,13 +15,16 @@ from urllib.parse import unquote
 
 from utils.logger import setup_logger
 from utils.response import APIResponse
+from config.settings import settings
+from config.database import get_table_name
 
 # 로깅 설정
 logger = setup_logger(__name__)
 
 # DynamoDB 초기화
-dynamodb = boto3.resource('dynamodb', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
-usage_table = dynamodb.Table(os.environ.get('USAGE_TABLE', 'f1-usage-two'))
+dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+# 동적 테이블 이름 생성 (하드코딩 제거)
+usage_table = dynamodb.Table(get_table_name('usage'))
 
 
 def decimal_to_float(obj):
