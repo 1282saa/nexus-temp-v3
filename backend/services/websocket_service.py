@@ -23,7 +23,15 @@ logger = setup_logger(__name__)
 
 # 글로벌 캐시 - Lambda 컨테이너 재사용 시 유지됨
 PROMPT_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
-CACHE_TTL = int(os.environ.get('CACHE_TTL', '300'))  # 기본 5분, 환경변수로 설정 가능
+CACHE_TTL = int(os.environ.get('CACHE_TTL', '1800'))  # 기본 30분, 환경변수로 설정 가능
+
+# 캐시 통계 (모니터링용)
+CACHE_STATS = {
+    'hits': 0,
+    'misses': 0,
+    'expirations': 0,
+    'invalidations': 0
+}
 
 # DynamoDB 클라이언트 - 프롬프트 테이블 접근용
 from config.settings import settings
@@ -130,11 +138,15 @@ class WebSocketService:
             age = now - cached_time
 
             if age < CACHE_TTL:
-                logger.info(f"Cache HIT for {engine_type} (age: {age:.1f}s) - DB query skipped")
+                CACHE_STATS['hits'] += 1
+                hit_rate = CACHE_STATS['hits'] / (CACHE_STATS['hits'] + CACHE_STATS['misses']) * 100 if (CACHE_STATS['hits'] + CACHE_STATS['misses']) > 0 else 0
+                logger.info(f"Cache HIT for {engine_type} (age: {age:.1f}s, hit_rate: {hit_rate:.1f}%) - DB query skipped")
                 return cached_data
             else:
+                CACHE_STATS['expirations'] += 1
                 logger.info(f"Cache EXPIRED for {engine_type} (age: {age:.1f}s) - refetching")
         else:
+            CACHE_STATS['misses'] += 1
             logger.info(f"Cache MISS for {engine_type} - initial fetch")
 
         # 캐시 미스 또는 만료 - DB에서 로드

@@ -1,7 +1,7 @@
 """
 프롬프트(Prompt) 비즈니스 로직
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import logging
 
 # 프롬프트 관련 모델들 (로컬 정의)
@@ -69,7 +69,19 @@ class PromptRepository:
             'updatedAt': prompt.updated_at
         }
         self.table.put_item(Item=item)
+        
+        # 캐시 무효화 - 프롬프트가 업데이트되면 캐시 삭제
+        self._invalidate_prompt_cache(prompt.engine_type)
+        
         return prompt
+    
+    def _invalidate_prompt_cache(self, engine_type: str):
+        """프롬프트 캐시 무효화"""
+        # WebSocketService의 캐시를 무효화
+        from services.websocket_service import PROMPT_CACHE
+        if engine_type in PROMPT_CACHE:
+            del PROMPT_CACHE[engine_type]
+            logging.info(f"Prompt cache invalidated for engine_type: {engine_type}")
     
     def get(self, engine_type: str, prompt_id: str) -> Optional[Prompt]:
         """프롬프트 조회"""
@@ -244,6 +256,9 @@ class PromptService:
             # 저장
             saved = self.repository.update(prompt)
             logger.info(f"Prompt updated: {prompt_id}")
+            
+            # 캐시 무효화 - 프롬프트가 업데이트되면 캐시 삭제
+            self.repository._invalidate_prompt_cache(prompt.engine_type)
             
             return saved
             
