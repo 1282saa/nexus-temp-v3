@@ -100,6 +100,9 @@ class ConversationRepository:
     def save(self, conversation: Conversation) -> Conversation:
         """대화 저장 (생성 또는 업데이트)"""
         try:
+            import os
+            import time
+            
             # ID 자동 생성
             if not conversation.conversation_id:
                 conversation.conversation_id = str(uuid.uuid4())
@@ -112,9 +115,17 @@ class ConversationRepository:
             
             # DynamoDB 저장
             item = conversation.to_dict()
+            
+            # TTL 설정 (기본 7일, 환경변수로 설정 가능)
+            ttl_days = int(os.environ.get('CONVERSATION_TTL_DAYS', '7'))
+            if ttl_days > 0:
+                # Unix timestamp로 TTL 설정
+                ttl_timestamp = int(time.time()) + (ttl_days * 24 * 60 * 60)
+                item['ttl'] = ttl_timestamp
+            
             self.table.put_item(Item=item)
             
-            logger.info(f"Conversation saved: {conversation.conversation_id}")
+            logger.info(f"Conversation saved: {conversation.conversation_id} (TTL: {ttl_days} days)")
             return conversation
             
         except Exception as e:
@@ -175,25 +186,10 @@ class ConversationRepository:
             
         except Exception as e:
             logger.error(f"Error finding conversations by user: {str(e)}")
-            # GSI가 없는 경우 scan 사용
-            try:
-                response = self.table.scan(
-                    FilterExpression='userId = :uid',
-                    ExpressionAttributeValues={
-                        ':uid': user_id
-                    }
-                )
-                
-                conversations = []
-                for item in response.get('Items', []):
-                    conversations.append(Conversation.from_dict(item))
-                
-                logger.info(f"Found {len(conversations)} conversations for user (scan): {user_id}")
-                return conversations[:limit]
-                
-            except Exception as fallback_error:
-                logger.error(f"Fallback scan also failed: {str(fallback_error)}")
-                return []
+            # GSI가 없는 경우 경고 로그만 남기고 빈 배열 반환
+            # scan은 성능과 비용 문제로 제거
+            logger.warning(f"userId-index GSI not found. Please create GSI for better performance.")
+            return []
     
     def update_messages(self, conversation_id: str, messages: List[Message]) -> bool:
         """메시지 업데이트"""

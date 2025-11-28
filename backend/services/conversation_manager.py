@@ -56,22 +56,33 @@ class ConversationManager:
                     'timestamp': timestamp
                 })
                 
-                # 최근 50개 메시지만 유지 (메모리 관리)
-                if len(messages) > 50:
-                    messages = messages[-50:]
+                # 환경변수로 설정 가능한 메시지 수 제한
+                max_messages = int(os.environ.get('MAX_MESSAGES_PER_CONVERSATION', '50'))
+                if len(messages) > max_messages:
+                    messages = messages[-max_messages:]
                 
                 # 업데이트 (userId가 없으면 추가)
-                update_expr = 'SET messages = :msgs, updatedAt = :updated'
+                import time
+                
+                # TTL 설정 (기본 7일)
+                ttl_days = int(os.environ.get('CONVERSATION_TTL_DAYS', '7'))
+                ttl_timestamp = int(time.time()) + (ttl_days * 24 * 60 * 60)
+                
+                update_expr = 'SET messages = :msgs, updatedAt = :updated, #ttl = :ttl'
                 expr_values = {
                     ':msgs': messages,
-                    ':updated': timestamp
+                    ':updated': timestamp,
+                    ':ttl': ttl_timestamp
+                }
+                expr_names = {
+                    '#ttl': 'ttl'  # ttl은 예약어일 수 있으므로 별칭 사용
                 }
                 
-
                 conversations_table.update_item(
                     Key={'userId': item['userId'], 'conversationId': conversation_id},
                     UpdateExpression=update_expr,
-                    ExpressionAttributeValues=expr_values
+                    ExpressionAttributeValues=expr_values,
+                    ExpressionAttributeNames=expr_names
                 )
             else:
                 # 새 대화 생성 - userId는 필수
@@ -79,6 +90,12 @@ class ConversationManager:
                     logger.error(f"Cannot create conversation without userId for {conversation_id}")
                     return False
 
+                import time
+                
+                # TTL 설정 (기본 7일)
+                ttl_days = int(os.environ.get('CONVERSATION_TTL_DAYS', '7'))
+                ttl_timestamp = int(time.time()) + (ttl_days * 24 * 60 * 60)
+                
                 item = {
                     'userId': user_id,  # 필수 키
                     'conversationId': conversation_id,
@@ -92,7 +109,8 @@ class ConversationManager:
                     }],
                     'createdAt': timestamp,
                     'updatedAt': timestamp,
-                    'title': content[:50] if role == 'user' else 'New Conversation'
+                    'title': content[:50] if role == 'user' else 'New Conversation',
+                    'ttl': ttl_timestamp  # TTL 필드 추가
                 }
 
                 conversations_table.put_item(Item=item)

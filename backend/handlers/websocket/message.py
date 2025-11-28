@@ -45,7 +45,7 @@ def handler(event, context):
     apigateway_client = boto3.client(
         'apigatewaymanagementapi',
         endpoint_url=f'https://{domain_name}/{stage}',
-        region_name='us-east-1'
+        region_name=os.environ.get('AWS_REGION', 'us-east-1')
     )
     
     # Service 초기화

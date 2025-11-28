@@ -23,7 +23,7 @@ logger = setup_logger(__name__)
 
 # 글로벌 캐시 - Lambda 컨테이너 재사용 시 유지됨
 PROMPT_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
-CACHE_TTL = 300  # 5분 (초 단위)
+CACHE_TTL = int(os.environ.get('CACHE_TTL', '300'))  # 기본 5분, 환경변수로 설정 가능
 
 # DynamoDB 클라이언트 - 프롬프트 테이블 접근용
 from config.settings import settings
@@ -74,9 +74,10 @@ class WebSocketService:
                 logger.info(f"New conversation created: {conversation_id}")
 
             # DB에서 기존 대화 히스토리 조회
+            max_history_limit = int(os.environ.get('MAX_CONVERSATION_LENGTH', '20'))
             db_history = self.conversation_manager.get_conversation_history(
                 conversation_id,
-                limit=20  # 최근 20개 메시지
+                limit=max_history_limit  # 환경변수로 설정 가능
                 ## 대화기억기능
             )
 
@@ -173,8 +174,15 @@ class WebSocketService:
 
                 # files 테이블에서 관련 파일들 로드
                 try:
-                    # files 테이블 전체 스캔 (현재 파일이 1개만 있음)
-                    files_response = self.files_table.scan()
+                    # promptId를 기반으로 파일 조회 (GSI 또는 query 사용 추천)
+                    # 현재는 임시로 특정 promptId에 해당하는 파일만 조회
+                    # TODO: files 테이블에 promptId GSI 추가 후 query로 변경
+                    files_response = self.files_table.query(
+                        KeyConditionExpression='promptId = :pid',
+                        ExpressionAttributeValues={
+                            ':pid': engine_type  # engine_type을 promptId로 사용
+                        }
+                    ) if hasattr(self.files_table, 'query') else {'Items': []}
 
                     if 'Items' in files_response:
                         for file_item in files_response['Items']:
@@ -184,7 +192,8 @@ class WebSocketService:
                                 'fileType': 'text'  # 기본값
                             })
                 except Exception as fe:
-                    logger.error(f"Error loading files from {FILES_TABLE_NAME}: {str(fe)}")
+                    # Query 실패 시 파일 없이 진행
+                    logger.warning(f"Could not load files for prompt {engine_type}: {str(fe)}")
 
                 elapsed = (time.time() - start_time) * 1000
                 logger.info(f"DB fetch for {engine_type}: "
