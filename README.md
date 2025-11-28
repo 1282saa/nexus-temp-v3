@@ -1,13 +1,44 @@
-# NEXUS Template - AI Chat Service Builder
+# 🚀 Nexus - AI Chat Service Template
 
-AI 기반 채팅 서비스를 쉽게 구축할 수 있는 템플릿 시스템입니다.
+> **원클릭으로 배포 가능한 엔터프라이즈급 AI 채팅 서비스 템플릿**
 
-## 🚀 초보자를 위한 빠른 시작 (추천!)
+[![AWS](https://img.shields.io/badge/AWS-Serverless-orange)](https://aws.amazon.com)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
+[![Node](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+
+## 🎯 목표
+
+이 템플릿은 다음을 위해 만들어졌습니다:
+- ✅ **코드 관리**: 체계적이고 표준화된 구조
+- ✅ **팀 협업**: 새로운 팀원도 쉽게 이해하고 유지보수 가능
+- ✅ **자동화**: 스크립트 하나로 전체 스택 배포
+
+## 🚀 30초 시작 가이드
+
+### 사전 요구사항
 
 ```bash
-# 원클릭 자동 설치 - 가장 쉬운 방법
-./quick-start.sh
+# 필수 도구 확인
+node --version      # v18 이상
+python3 --version   # 3.11 이상
+aws --version       # AWS CLI 설치됨
+
+# AWS 계정 설정
+aws configure
 ```
+
+### 원클릭 설치 & 배포
+
+```bash
+# 🎆 자동 설정 스크립트 실행
+./setup.sh
+
+# 또는 수동으로:
+./setup.sh dev my-project us-east-1
+```
+
+🎉 **완료!** 모든 것이 자동으로 설정됩니다.
 
 ## 🎯 고급 사용자를 위한 메뉴 시스템
 
