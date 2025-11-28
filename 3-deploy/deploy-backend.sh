@@ -44,10 +44,8 @@ cd "${PROJECT_ROOT}/backend"
 # 기존 패키지 삭제
 rm -f lambda-deployment.zip
 
-# ZIP 파일 생성
-cd extracted
-zip -r ../lambda-deployment.zip . -x "*.pyc" -x "__pycache__/*" -x ".env*"
-cd ..
+# ZIP 파일 생성 (간소화된 backend 폴더 구조)
+zip -r lambda-deployment.zip . -x "*.pyc" -x "__pycache__/*" -x ".env*" -x "README.md" -x ".DS_Store"
 
 if [ ! -f lambda-deployment.zip ]; then
     echo "❌ 배포 패키지 생성 실패"

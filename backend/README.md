@@ -9,7 +9,7 @@ AI 채팅 서비스의 서버리스 백엔드 로직을 담당하는 Lambda 함�
 - DynamoDB (NoSQL 데이터베이스)
 - API Gateway (REST + WebSocket)
 
-## 📂 폴더 구조
+## 📂 폴더 구조 (간소화됨)
 
 ```
 backend/
@@ -22,25 +22,47 @@ backend/
 │   └── websocket/        # WebSocket 핸들러
 │       ├── connect.py    # 연결 수립
 │       ├── disconnect.py # 연결 종료
-│       └── message.py    # 메시지 처리
+│       ├── message.py    # 메시지 처리
+│       └── conversation_manager.py # 대화 관리 헬퍼
 │
-├── core/                 # 핵심 비즈니스 로직
-│   ├── ai/              # AI 모델 통합
-│   │   ├── bedrock.py   # Bedrock 클라이언트
-│   │   └── prompts.py   # 프롬프트 관리
+├── src/                  # 핵심 비즈니스 로직
+│   ├── config/          # 설정 파일
+│   │   ├── aws.py       # AWS 설정
+│   │   └── database.py  # DB 설정
 │   │
-│   ├── database/        # 데이터베이스 작업
-│   │   ├── dynamodb.py  # DynamoDB 헬퍼
-│   │   └── models.py    # 데이터 모델
+│   ├── models/          # 데이터 모델
+│   │   ├── conversation.py
+│   │   ├── prompt.py
+│   │   └── usage.py
 │   │
-│   └── utils/           # 유틸리티 함수
-│       ├── auth.py      # 인증 검증
-│       ├── logger.py    # 로깅 설정
-│       └── validators.py # 입력 검증
+│   ├── repositories/    # 데이터 저장소
+│   │   ├── conversation_repository.py
+│   │   ├── prompt_repository.py
+│   │   └── usage_repository.py
+│   │
+│   └── services/        # 비즈니스 로직
+│       ├── conversation_service.py
+│       ├── prompt_service.py
+│       └── usage_service.py
 │
-├── requirements.txt     # Python 패키지 의존성
-└── .env                # 환경 변수
+├── lib/                  # 외부 라이브러리
+│   └── bedrock_client_enhanced.py # Bedrock AI 클라이언트
+│
+├── services/             # WebSocket 서비스
+│   └── websocket_service.py
+│
+├── utils/                # 유틸리티
+│   ├── logger.py        # 로깅 설정
+│   └── response.py      # API 응답 포맷
+│
+└── .env                  # 환경 변수
 ```
+
+## 📦 배포 구조
+
+이 폴더의 모든 내용이 ZIP으로 패키징되어 Lambda에 배포됩니다:
+- README.md와 .env는 배포에서 제외
+- __pycache__ 폴더는 자동 제외
 
 ## 🔑 주요 Lambda 함수
 
@@ -158,9 +180,9 @@ LOG_LEVEL=INFO
 
 ## 🚀 배포 프로세스
 
-1. 의존성 설치: `pip install -r requirements.txt -t .`
-2. ZIP 패키징: 모든 파일을 lambda.zip으로 압축
-3. Lambda 업데이트: AWS CLI로 함수 코드 업데이트
+1. `3-deploy/deploy-backend.sh` 스크립트 실행
+2. 자동으로 ZIP 패키징 및 Lambda 함수 업데이트
+3. 6개 함수 동시 배포
 
 ## ⚠️ 주의사항
 - Lambda 실행 시간 제한: 120초
