@@ -6,8 +6,132 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 import logging
 
-from ..models import Usage, UsageSummary
-from ..repositories import UsageRepository
+# 사용량 관련 모델들 (로컬 정의)
+from dataclasses import dataclass
+import boto3
+from boto3.dynamodb.conditions import Key
+
+@dataclass
+class Usage:
+    """사용량 모델"""
+    user_id: str
+    date: str
+    engine_type: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    request_count: int = 0
+    cost: Decimal = Decimal('0')
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+@dataclass
+class UsageSummary:
+    """사용량 요약"""
+    user_id: str
+    period: str  # 'daily', 'monthly', 'total'
+    start_date: str
+    end_date: str
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_requests: int = 0
+    total_cost: Decimal = Decimal('0')
+    by_engine: Dict[str, Dict[str, Any]] = None
+
+class UsageRepository:
+    """사용량 저장소"""
+    
+    def __init__(self):
+        from config.database import get_table_name
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(get_table_name('usage'))
+    
+    def increment_usage(
+        self,
+        user_id: str,
+        engine_type: str,
+        input_tokens: int,
+        output_tokens: int,
+        cost: Decimal
+    ) -> Usage:
+        """사용량 증가 (원자적 업데이트)"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        date_key = f"{today}#{engine_type}"
+        
+        response = self.table.update_item(
+            Key={
+                'userId': user_id,
+                'usageDate#engineType': date_key
+            },
+            UpdateExpression="""
+                ADD inputTokens :input_tokens,
+                    outputTokens :output_tokens,
+                    totalTokens :total_tokens,
+                    requestCount :one,
+                    cost :cost
+                SET updatedAt = :now,
+                    #date = :date,
+                    engineType = :engine_type
+            """,
+            ExpressionAttributeNames={
+                '#date': 'date'
+            },
+            ExpressionAttributeValues={
+                ':input_tokens': Decimal(input_tokens),
+                ':output_tokens': Decimal(output_tokens),
+                ':total_tokens': Decimal(input_tokens + output_tokens),
+                ':one': Decimal(1),
+                ':cost': cost,
+                ':now': datetime.utcnow().isoformat() + 'Z',
+                ':date': today,
+                ':engine_type': engine_type
+            },
+            ReturnValues='ALL_NEW'
+        )
+        
+        item = response['Attributes']
+        return Usage(
+            user_id=item['userId'],
+            date=item['date'],
+            engine_type=item['engineType'],
+            input_tokens=int(item.get('inputTokens', 0)),
+            output_tokens=int(item.get('outputTokens', 0)),
+            total_tokens=int(item.get('totalTokens', 0)),
+            request_count=int(item.get('requestCount', 0)),
+            cost=item.get('cost', Decimal('0')),
+            updated_at=item.get('updatedAt')
+        )
+    
+    def get_usage_by_date(
+        self,
+        user_id: str,
+        start_date: str,
+        end_date: str
+    ) -> List[Usage]:
+        """특정 기간의 사용량 조회"""
+        response = self.table.query(
+            KeyConditionExpression=Key('userId').eq(user_id) & 
+                                 Key('usageDate#engineType').between(
+                                     start_date, end_date + '#zzz'
+                                 )
+        )
+        
+        usages = []
+        for item in response.get('Items', []):
+            usages.append(Usage(
+                user_id=item['userId'],
+                date=item.get('date', ''),
+                engine_type=item.get('engineType', ''),
+                input_tokens=int(item.get('inputTokens', 0)),
+                output_tokens=int(item.get('outputTokens', 0)),
+                total_tokens=int(item.get('totalTokens', 0)),
+                request_count=int(item.get('requestCount', 0)),
+                cost=item.get('cost', Decimal('0')),
+                created_at=item.get('createdAt'),
+                updated_at=item.get('updatedAt')
+            ))
+        
+        return usages
 
 logger = logging.getLogger(__name__)
 

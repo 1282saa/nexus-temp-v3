@@ -4,8 +4,110 @@
 from typing import List, Optional, Dict, Any
 import logging
 
-from ..models import Prompt, PromptConfig, PromptFile
-from ..repositories import PromptRepository
+# 프롬프트 관련 모델들 (로컬 정의)
+from dataclasses import dataclass, field
+from datetime import datetime
+import uuid
+import boto3
+
+@dataclass
+class PromptConfig:
+    """프롬프트 설정"""
+    description: str
+    instruction: str
+
+@dataclass
+class PromptFile:
+    """프롬프트 파일"""
+    file_name: str
+    file_content: str
+    file_type: str = 'text'
+
+@dataclass
+class Prompt:
+    """프롬프트 모델"""
+    prompt_id: str
+    user_id: str
+    engine_type: str
+    prompt_name: str
+    config: PromptConfig
+    files: List['PromptFile'] = field(default_factory=list)
+    is_public: bool = False
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class PromptRepository:
+    """프롬프트 저장소"""
+    
+    def __init__(self):
+        from config.database import get_table_name
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(get_table_name('prompts'))
+    
+    def save(self, prompt: Prompt) -> Prompt:
+        """프롬프트 저장"""
+        if not prompt.prompt_id:
+            prompt.prompt_id = str(uuid.uuid4())
+        if not prompt.created_at:
+            prompt.created_at = datetime.utcnow().isoformat() + 'Z'
+        prompt.updated_at = datetime.utcnow().isoformat() + 'Z'
+        
+        item = {
+            'engineType': prompt.engine_type,
+            'promptId': prompt.prompt_id,
+            'userId': prompt.user_id,
+            'promptName': prompt.prompt_name,
+            'description': prompt.config.description,
+            'instruction': prompt.config.instruction,
+            'files': [{
+                'fileName': f.file_name,
+                'fileContent': f.file_content,
+                'fileType': f.file_type
+            } for f in prompt.files],
+            'isPublic': prompt.is_public,
+            'createdAt': prompt.created_at,
+            'updatedAt': prompt.updated_at
+        }
+        self.table.put_item(Item=item)
+        return prompt
+    
+    def get(self, engine_type: str, prompt_id: str) -> Optional[Prompt]:
+        """프롬프트 조회"""
+        try:
+            response = self.table.get_item(
+                Key={'engineType': engine_type, 'promptId': prompt_id}
+            )
+            if 'Item' not in response:
+                return None
+            
+            item = response['Item']
+            config = PromptConfig(
+                description=item.get('description', ''),
+                instruction=item.get('instruction', '')
+            )
+            
+            files = []
+            for f in item.get('files', []):
+                files.append(PromptFile(
+                    file_name=f.get('fileName', ''),
+                    file_content=f.get('fileContent', ''),
+                    file_type=f.get('fileType', 'text')
+                ))
+            
+            return Prompt(
+                prompt_id=item['promptId'],
+                user_id=item.get('userId', ''),
+                engine_type=item['engineType'],
+                prompt_name=item.get('promptName', ''),
+                config=config,
+                files=files,
+                is_public=item.get('isPublic', False),
+                created_at=item.get('createdAt'),
+                updated_at=item.get('updatedAt')
+            )
+        except Exception as e:
+            logger.error(f"Error getting prompt: {e}")
+            return None
 
 logger = logging.getLogger(__name__)
 

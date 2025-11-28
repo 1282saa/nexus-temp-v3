@@ -1,0 +1,368 @@
+service: nexus-backend
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.11
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  memorySize: 512
+  timeout: 120
+  architecture: arm64 # Graviton2 for better performance/cost
+
+  # 환경변수 설정
+  environment:
+    SERVICE_NAME: ${self:service}
+    ENVIRONMENT: ${self:provider.stage}
+    STACK_SUFFIX: ${self:provider.stage}
+    AWS_REGION: ${self:provider.region}
+    LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, 'INFO'}
+
+    # DynamoDB 테이블 (동적 생성)
+    CONVERSATIONS_TABLE: ${self:service}-conversations-${self:provider.stage}
+    PROMPTS_TABLE: ${self:service}-prompts-${self:provider.stage}
+    USAGE_TABLE: ${self:service}-usage-${self:provider.stage}
+    FILES_TABLE: ${self:service}-files-${self:provider.stage}
+    WEBSOCKET_TABLE: ${self:service}-websocket-connections-${self:provider.stage}
+
+    # API Gateway
+    REST_API_ID: !Ref RestApiGateway
+    WEBSOCKET_API_ID: !Ref WebsocketApi
+
+    # Bedrock 설정
+    BEDROCK_MODEL_ID: ${self:custom.bedrockModel.${self:provider.stage}}
+    GUARDRAIL_ENABLED: ${self:custom.guardrailEnabled.${self:provider.stage}}
+
+  # IAM 역할
+  iam:
+    role:
+      statements:
+        # DynamoDB 권한
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:DescribeTable
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-*-${self:provider.stage}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-*-${self:provider.stage}/index/*
+
+        # Bedrock 권한
+        - Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource: "*"
+
+        # API Gateway WebSocket 권한
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource:
+            - arn:aws:execute-api:${self:provider.region}:*:*/*/POST/@connections/*
+
+  # 로그 설정
+  logs:
+    restApi:
+      accessLogging: true
+      format: "$context.requestId $context.requestTime $context.httpMethod $context.path $context.status"
+    websocket:
+      level: INFO
+
+# 커스텀 변수
+custom:
+  # 환경별 로그 레벨
+  logLevel:
+    dev: DEBUG
+    staging: INFO
+    prod: WARN
+
+  # 환경별 Bedrock 모델
+  bedrockModel:
+    dev: anthropic.claude-3-sonnet-20240229-v1:0
+    staging: anthropic.claude-3-sonnet-20240229-v1:0
+    prod: anthropic.claude-3-5-sonnet-20241022-v2:0
+
+  # 환경별 Guardrail 설정
+  guardrailEnabled:
+    dev: false
+    staging: true
+    prod: true
+
+  # Python Requirements Plugin
+  pythonRequirements:
+    dockerizePip: true
+    layer: true
+    slim: true
+    strip: false
+    pipCmdExtraArgs:
+      - --platform manylinux2014_aarch64
+      - --only-binary=:all:
+
+  # 배포 버킷
+  deploymentBucket:
+    name: ${self:service}-deployments-${self:provider.stage}
+    serverSideEncryption: AES256
+
+  # API Gateway 설정
+  apiGateway:
+    shouldStartNameWithService: true
+
+  # CORS 설정
+  cors:
+    origin: "*"
+    headers:
+      - Content-Type
+      - X-Amz-Date
+      - Authorization
+      - X-Api-Key
+      - X-Amz-Security-Token
+      - X-Amz-User-Agent
+    allowCredentials: false
+
+# Lambda 함수 정의
+functions:
+  # REST API 함수들
+  conversationApi:
+    handler: handlers/api/conversation.handler
+    description: Conversation management API
+    events:
+      - http:
+          path: /conversations
+          method: any
+          cors: ${self:custom.cors}
+      - http:
+          path: /conversations/{id}
+          method: any
+          cors: ${self:custom.cors}
+
+  promptApi:
+    handler: handlers/api/prompt.handler
+    description: Prompt CRUD operations
+    events:
+      - http:
+          path: /prompts
+          method: any
+          cors: ${self:custom.cors}
+      - http:
+          path: /prompts/{promptId}
+          method: any
+          cors: ${self:custom.cors}
+      - http:
+          path: /prompts/{promptId}/files
+          method: any
+          cors: ${self:custom.cors}
+      - http:
+          path: /prompts/{promptId}/files/{fileId}
+          method: any
+          cors: ${self:custom.cors}
+
+  usageApi:
+    handler: handlers/api/usage.handler
+    description: Usage tracking and analytics
+    events:
+      - http:
+          path: /usage
+          method: any
+          cors: ${self:custom.cors}
+      - http:
+          path: /usage/{userId}
+          method: any
+          cors: ${self:custom.cors}
+
+  # WebSocket 함수들
+  websocketConnect:
+    handler: handlers/websocket/connect.handler
+    description: WebSocket connection handler
+    events:
+      - websocket:
+          route: $connect
+
+  websocketDisconnect:
+    handler: handlers/websocket/disconnect.handler
+    description: WebSocket disconnection handler
+    events:
+      - websocket:
+          route: $disconnect
+
+  websocketMessage:
+    handler: handlers/websocket/message.handler
+    description: WebSocket message handler
+    memorySize: 1024 # AI 처리를 위해 메모리 증가
+    timeout: 300 # 5분 (스트리밍 응답)
+    events:
+      - websocket:
+          route: $default
+      - websocket:
+          route: sendMessage
+      - websocket:
+          route: clearHistory
+
+# DynamoDB 테이블 정의
+resources:
+  Resources:
+    # Conversations 테이블
+    ConversationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-conversations-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: conversationId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: conversationId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: userId-createdAt-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # Prompts 테이블
+    PromptsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-prompts-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: engineType
+            AttributeType: S
+          - AttributeName: promptId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: engineType
+            KeyType: HASH
+          - AttributeName: promptId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # Usage 테이블
+    UsageTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-usage-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: usageDate#engineType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: usageDate#engineType
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # Files 테이블
+    FilesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-files-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: promptId
+            AttributeType: S
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: promptId
+            KeyType: HASH
+          - AttributeName: fileId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # WebSocket Connections 테이블
+    WebsocketConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-websocket-connections-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+  # CloudFormation 출력
+  Outputs:
+    RestApiUrl:
+      Description: REST API Gateway URL
+      Value: !Sub "https://${RestApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+      Export:
+        Name: ${self:service}-rest-api-url-${self:provider.stage}
+
+    WebSocketUrl:
+      Description: WebSocket API Gateway URL
+      Value: !Sub "wss://${WebsocketApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+      Export:
+        Name: ${self:service}-websocket-url-${self:provider.stage}
+
+# 플러그인
+plugins:
+  - serverless-python-requirements
+  - serverless-plugin-log-retention
+  - serverless-iam-roles-per-function
+
+# 패키지 설정
+package:
+  individually: true
+  patterns:
+    - "!.git/**"
+    - "!.gitignore"
+    - "!.DS_Store"
+    - "!npm-debug.log"
+    - "!.serverless/**"
+    - "!.serverless_plugins/**"
+    - "!__pycache__/**"
+    - "!.pytest_cache/**"
+    - "!*.pyc"
+    - "!tests/**"
+    - "!node_modules/**"

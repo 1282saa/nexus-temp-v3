@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# 환경변수 (중요!)
+.env
+.env.dev
+.env.staging
+.env.prod
+.env.local
+
+# 테스트
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 서버리스
+.serverless/
+node_modules/
+package-lock.json
+
+# Lambda Layers
+layers/python/
+layers/*.zip
+
+# 로그
+*.log
+logs/
+
+# 임시 파일
+tmp/
+temp/
+*.tmp
+
+# 빌드
+dist/
+build/
+*.egg-info/
+
+# 로컬 데이터
+*.db
+*.sqlite
+
+# AWS
+.aws/
+
+# 보안
+*.pem
+*.key
+*.crt
+secrets/

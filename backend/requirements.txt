@@ -1,0 +1,31 @@
+# AWS SDK
+boto3==1.34.14
+botocore==1.34.14
+
+# JWT 처리
+python-jose==3.3.0
+cryptography==41.0.7
+
+# 날짜/시간 처리
+python-dateutil==2.8.2
+
+# JSON 처리
+simplejson==3.19.2
+
+# 환경변수 관리
+python-dotenv==1.0.0
+
+# 타입 힌팅
+typing-extensions==4.9.0
+
+# 로깅
+python-json-logger==2.0.7
+
+# HTTP 요청
+urllib3==2.1.0
+
+# 데이터 검증
+pydantic==2.5.3
+
+# 유틸리티
+six==1.16.0

@@ -1,0 +1,30 @@
+# 프로덕션 의존성 포함
+-r requirements.txt
+
+# 테스트
+pytest==7.4.4
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-asyncio==0.21.1
+moto==4.2.12  # AWS 서비스 모킹
+
+# 코드 품질
+black==23.12.1
+flake8==7.0.0
+pylint==3.0.3
+mypy==1.8.0
+isort==5.13.2
+
+# 개발 도구
+ipython==8.19.0
+ipdb==0.13.13
+
+# 서버리스 프레임워크
+serverless-wsgi==3.0.3
+
+# 로컬 테스트
+python-lambda-local==0.1.13
+
+# 문서화
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0

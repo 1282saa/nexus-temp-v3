@@ -1,0 +1,26 @@
+{
+  "name": "nexus-backend",
+  "version": "1.0.0",
+  "description": "Nexus AI Chat Service Backend",
+  "private": true,
+  "scripts": {
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:staging": "serverless deploy --stage staging",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f conversationApi -t",
+    "offline": "serverless offline start",
+    "package": "serverless package"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-python-requirements": "^6.0.0",
+    "serverless-plugin-log-retention": "^2.0.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-offline": "^13.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
