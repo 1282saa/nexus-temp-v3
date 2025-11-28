@@ -1,0 +1,56 @@
+{
+  "project": {
+    "name": "nexus-template",
+    "version": "2.0.0",
+    "description": "AI-powered chat application template"
+  },
+  "service": {
+    "serviceName": "",
+    "stackSuffix": "",
+    "environment": "development",
+    "customDomain": "",
+    "serviceType": "standard"
+  },
+  "aws": {
+    "region": "us-east-1",
+    "accountId": "",
+    "profile": "default",
+    "apiStage": "prod"
+  },
+  "infrastructure": {
+    "s3Bucket": "",
+    "cloudfrontId": "",
+    "cloudfrontDomain": "",
+    "restApiId": "",
+    "websocketApiId": ""
+  },
+  "cognito": {
+    "userPoolId": "",
+    "clientId": ""
+  },
+  "admin": {
+    "email": "",
+    "companyDomain": ""
+  },
+  "features": {
+    "enableNewsSearch": false,
+    "enableFileUpload": true,
+    "maxFileSizeMB": 10,
+    "sessionTimeoutMinutes": 30,
+    "enableGuardrails": false
+  },
+  "bedrock": {
+    "modelId": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "opusModelId": "us.anthropic.claude-opus-4-1-20250805-v1:0",
+    "maxTokens": 16384,
+    "temperature": 0.7,
+    "topP": 0.9,
+    "topK": 40
+  },
+  "monitoring": {
+    "metricsEnabled": true,
+    "logLevel": "INFO",
+    "cloudwatchNamespace": "",
+    "logGroupPrefix": "/aws/lambda/"
+  }
+}

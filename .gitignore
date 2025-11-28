@@ -1,0 +1,70 @@
+# Environment Variables (실제 값이 있는 파일들)
+.env
+.env.local
+.env.production.local
+.env.deploy
+*.env.backup.*
+config.json
+
+# 하지만 템플릿 파일은 포함
+!.env.template
+!.env.deploy.template
+!config.template.json
+
+# Frontend
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.env.production.local
+frontend/dist/
+frontend/node_modules/
+
+# Backend
+backend/.env
+backend/.env.local
+backend/lambda-deployment.zip
+backend/__pycache__/
+backend/*.pyc
+
+# AWS
+.aws/
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+venv/
+*.egg-info/
+
+# Build
+dist/
+build/
+*.zip
+
+# Deployment & State
+.last-deploy-*
+.infrastructure-created
+.nexus-state/
+.nexus-prereq-checked
+deployment-info.txt
+
+# Temporary
+/tmp/
+*.tmp
+*.bak
