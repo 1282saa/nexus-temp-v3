@@ -4,7 +4,7 @@ WebSocket 연결 핸들러
 import json
 import boto3
 from datetime import datetime
-from src.config.database import get_table_name
+from config.database import get_table_name
 from utils.logger import get_logger
 from utils.response import create_response
 

@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.config.aws import AWS_REGION, BEDROCK_CONFIG
+from config.aws import AWS_REGION, BEDROCK_CONFIG
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)

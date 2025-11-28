@@ -13,9 +13,9 @@ import uuid
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.config.aws import AWS_REGION, DYNAMODB_TABLES
+from config.aws import AWS_REGION, DYNAMODB_TABLES
 
-from handlers.websocket.conversation_manager import ConversationManager
+from services.conversation_manager import ConversationManager
 from lib.bedrock_client_enhanced import BedrockClientEnhanced
 from utils.logger import setup_logger
 

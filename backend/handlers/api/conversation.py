@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from src.services.conversation_service import ConversationService
+from services.conversation_service import ConversationService
 from utils.response import APIResponse
 from utils.logger import setup_logger
 
@@ -119,7 +119,8 @@ def handler(event, context):
 
                     # 메시지가 있으면 업데이트
                     if messages and len(messages) > 0:
-                        from src.models import Message
+                        # Message 모델 import - 필요시 conversation_service에서 가져오기
+                        from services.conversation_service import Message  # TODO: Message 모델 위치 정리 필요
                         message_objects = []
                         for msg in messages:
                             message_objects.append(Message(

@@ -138,7 +138,7 @@ def handler(event, context):
             )
 
             # 4.5. AI 응답 저장 - ConversationManager import 필요
-            from handlers.websocket.conversation_manager import ConversationManager
+            from services.conversation_manager import ConversationManager
             conversation_manager = ConversationManager()
             conversation_manager.save_message(
                 conversation_id=conversation_id,
