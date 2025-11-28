@@ -315,7 +315,7 @@ class WebSocketService:
             usage_table = dynamodb.Table(get_table_name('usage'))
             today = datetime.now().strftime('%Y-%m-%d')
 
-            # date 키 생성 (테이블 스키마: userId, date)
+            # date 키 생성 (테이블 스키마: userId, usageDate#engineType)
             date_key = f"{today}#{engine_type}"
 
             # 원자적 업데이트로 사용량 증가
@@ -323,7 +323,7 @@ class WebSocketService:
             usage_table.update_item(
                 Key={
                     'userId': user_id,
-                    'date': date_key
+                    'usageDate#engineType': date_key
                 },
                 UpdateExpression="""
                     ADD totalTokens :total,

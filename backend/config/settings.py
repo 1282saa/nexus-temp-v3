@@ -16,7 +16,8 @@ class Settings:
         self.STACK_SUFFIX = os.environ.get('STACK_SUFFIX', 'dev')
         
         # AWS 설정
-        self.AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+        # AWS_REGION은 Lambda 예약어이므로 DEPLOY_REGION 사용
+        self.AWS_REGION = os.environ.get('DEPLOY_REGION', os.environ.get('AWS_REGION', 'us-east-1'))
         self.AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
         
         # 테이블 이름 패턴 (하드코딩 제거)

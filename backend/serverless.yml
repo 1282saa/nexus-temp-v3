@@ -15,7 +15,8 @@ provider:
     SERVICE_NAME: ${self:service}
     ENVIRONMENT: ${self:provider.stage}
     STACK_SUFFIX: ${self:provider.stage}
-    AWS_REGION: ${self:provider.region}
+    # AWS_REGION은 Lambda 예약어이므로 다른 이름 사용
+    DEPLOY_REGION: ${self:provider.region}
     LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, 'INFO'}
 
     # DynamoDB 테이블 (동적 생성)
@@ -25,9 +26,7 @@ provider:
     FILES_TABLE: ${self:service}-files-${self:provider.stage}
     WEBSOCKET_TABLE: ${self:service}-websocket-connections-${self:provider.stage}
 
-    # API Gateway
-    REST_API_ID: !Ref RestApiGateway
-    WEBSOCKET_API_ID: !Ref WebsocketApi
+    # API Gateway (자동 생성됨 - 배포 후 환경변수로 참조 가능)
 
     # Bedrock 설정
     BEDROCK_MODEL_ID: ${self:custom.bedrockModel.${self:provider.stage}}
@@ -95,13 +94,10 @@ custom:
 
   # Python Requirements Plugin
   pythonRequirements:
-    dockerizePip: true
+    dockerizePip: false  # Docker 없이 로컬에서 패키징
     layer: true
     slim: true
     strip: false
-    pipCmdExtraArgs:
-      - --platform manylinux2014_aarch64
-      - --only-binary=:all:
 
   # 배포 버킷
   deploymentBucket:
@@ -229,9 +225,6 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
         BillingMode: PAY_PER_REQUEST
         TimeToLiveSpecification:
           AttributeName: ttl
@@ -338,13 +331,29 @@ resources:
   Outputs:
     RestApiUrl:
       Description: REST API Gateway URL
-      Value: !Sub "https://${RestApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: ApiGatewayRestApi
+            - '.execute-api.'
+            - ${self:provider.region}
+            - '.amazonaws.com/'
+            - ${self:provider.stage}
       Export:
         Name: ${self:service}-rest-api-url-${self:provider.stage}
 
     WebSocketUrl:
       Description: WebSocket API Gateway URL
-      Value: !Sub "wss://${WebsocketApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+      Value:
+        Fn::Join:
+          - ''
+          - - 'wss://'
+            - Ref: WebsocketsApi
+            - '.execute-api.'
+            - ${self:provider.region}
+            - '.amazonaws.com/'
+            - ${self:provider.stage}
       Export:
         Name: ${self:service}-websocket-url-${self:provider.stage}
 

@@ -85,9 +85,10 @@ def handler(event, context):
             })
         
         # GET /conversations/{conversationId} - 상세 조회
-        elif http_method == 'GET' and 'conversationId' in path_params:
+        elif http_method == 'GET' and ('conversationId' in path_params or 'id' in path_params):
+            conversation_id = path_params.get('conversationId') or path_params.get('id')
             conversation = conversation_service.get_conversation(
-                path_params['conversationId']
+                conversation_id
             )
             if conversation:
                 return APIResponse.success(conversation.to_dict())
@@ -158,9 +159,9 @@ def handler(event, context):
             return APIResponse.success(saved.to_dict(), 201)
         
         # PATCH /conversations/{conversationId} - 대화 부분 업데이트 (제목 수정 등)
-        elif http_method == 'PATCH' and 'conversationId' in path_params:
+        elif http_method == 'PATCH' and ('conversationId' in path_params or 'id' in path_params):
             body = json.loads(event.get('body', '{}'))
-            conversation_id = path_params['conversationId']
+            conversation_id = path_params.get('conversationId') or path_params.get('id')
             
             logger.info(f"PATCH request for conversation: {conversation_id}")
             logger.info(f"Request body: {body}")
@@ -184,9 +185,9 @@ def handler(event, context):
                 return APIResponse.error('No title field to update', 400)
         
         # PUT /conversations/{conversationId} - 대화 업데이트 (메시지 저장)
-        elif http_method == 'PUT' and 'conversationId' in path_params:
+        elif http_method == 'PUT' and ('conversationId' in path_params or 'id' in path_params):
             body = json.loads(event.get('body', '{}'))
-            conversation_id = path_params['conversationId']
+            conversation_id = path_params.get('conversationId') or path_params.get('id')
 
             logger.info(f"PUT request for conversation: {conversation_id}")
             logger.info(f"Request body keys: {body.keys()}")
@@ -225,9 +226,10 @@ def handler(event, context):
                 return APIResponse.error('No messages to update', 400)
 
         # DELETE /conversations/{conversationId} - 대화 삭제
-        elif http_method == 'DELETE' and 'conversationId' in path_params:
+        elif http_method == 'DELETE' and ('conversationId' in path_params or 'id' in path_params):
+            conversation_id = path_params.get('conversationId') or path_params.get('id')
             success = conversation_service.delete_conversation(
-                path_params['conversationId']
+                conversation_id
             )
             if success:
                 return APIResponse.success({'message': 'Conversation deleted'})

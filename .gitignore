@@ -63,6 +63,9 @@ build/
 .nexus-state/
 .nexus-prereq-checked
 deployment-info.txt
+frontend-deployment-info.txt
+backend/deploy.log
+backend/function.zip
 
 # Temporary
 /tmp/

@@ -120,6 +120,7 @@ def handler(event, context):
                 total_response += chunk
                 
                 # 청크 전송
+                logger.info(f"Sending chunk {chunk_index} to {connection_id}, chunk length: {len(chunk)}")
                 send_message_to_client(connection_id, {
                     'type': 'ai_chunk',
                     'chunk': chunk,
