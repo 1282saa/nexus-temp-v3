@@ -1,4 +1,8 @@
-// WebSocket 서비스
+/**
+ * WebSocket 서비스 클래스
+ * 실시간 채팅을 위한 WebSocket 연결을 관리하고 메시지 통신을 처리
+ * 자동 재연결, 메시지 큐잉, 이벤트 핸들링 기능 포함
+ */
 class WebSocketService {
   constructor() {
     this.ws = null;
@@ -14,7 +18,12 @@ class WebSocketService {
     this.currentConversationId = null;
   }
 
-  // WebSocket 연결
+  /**
+   * WebSocket 연결을 수립하고 이벤트 핸들러를 설정
+   * JWT 토큰을 사용하여 인증된 연결을 생성
+   * 
+   * @returns {Promise} 연결 성공/실패 Promise
+   */
   async connect() {
     if (
       this.isConnecting ||

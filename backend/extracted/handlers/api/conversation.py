@@ -20,6 +20,19 @@ logger = setup_logger(__name__)
 def handler(event, context):
     """
     Lambda 핸들러 - 대화 관리 API
+    
+    HTTP 메서드별 처리:
+    - GET /conversations: 사용자의 대화 목록 조회
+    - GET /conversations/{id}: 특정 대화 상세 조회
+    - POST /conversations: 새 대화 생성 또는 업데이트
+    - DELETE /conversations/{id}: 대화 삭제
+    
+    Args:
+        event: API Gateway 이벤트 객체
+        context: Lambda 컨텍스트 객체
+    
+    Returns:
+        dict: API Gateway 응답 형식 (statusCode, headers, body)
     """
     logger.info(f"Event: {json.dumps(event)}")
     
@@ -44,6 +57,7 @@ def handler(event, context):
         
         # GET /conversations - 목록 조회
         if http_method == 'GET' and not path_params:
+            # 사용자의 모든 대화 목록을 조회하고 최신순으로 정렬
             # 쿼리 파라미터에서 userId와 engineType 추출
             query_params = event.get('queryStringParameters', {}) or {}
             user_id = query_params.get('userId')
@@ -82,6 +96,7 @@ def handler(event, context):
         
         # POST /conversations - 대화 저장
         elif http_method == 'POST':
+            # 새 대화를 생성하거나 기존 대화를 업데이트
             body = json.loads(event.get('body', '{}'))
 
             # 필수 필드 확인

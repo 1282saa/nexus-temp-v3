@@ -20,6 +20,19 @@ logger = setup_logger(__name__)
 def handler(event, context):
     """
     WebSocket 메시지 핸들러 - Service Layer 사용
+    
+    WebSocket을 통해 전송된 메시지를 처리하고 AI 응답을 스트리밍
+    
+    액션 타입:
+    - sendMessage: AI와 대화 (기본)
+    - clearHistory: 대화 기록 초기화
+    
+    Args:
+        event: WebSocket 이벤트 객체
+        context: Lambda 컨텍스트
+    
+    Returns:
+        dict: WebSocket 응답 (statusCode, body)
     """
     logger.info(f"Message event: {json.dumps(event)}")
     
@@ -46,7 +59,7 @@ def handler(event, context):
         body = json.loads(event['body'])
         action = body.get('action', 'sendMessage')
         
-        # 대화 초기화 액션
+        # 대화 초기화 액션 - 대화 기록을 삭제하고 새로 시작
         if action == 'clearHistory':
             conversation_id = body.get('conversationId')
             if conversation_id:
@@ -61,9 +74,9 @@ def handler(event, context):
                     'body': json.dumps({'message': 'History cleared'})
                 }
         
-        # 메시지 전송 액션
+        # 메시지 전송 액션 - 사용자 메시지를 AI에 전달하고 응답 스트리밍
         elif action == 'sendMessage':
-            # 파라미터 추출
+            # 필수 파라미터 추출 및 검증
             user_message = body.get('message', '')
             engine_type = body.get('engineType', '11')
             conversation_id = body.get('conversationId')

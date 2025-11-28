@@ -12,6 +12,20 @@ import {
 /**
  * Custom hook for managing WebSocket chat functionality
  * Extracts complex WebSocket logic from ChatPage component
+ * 
+ * WebSocket 대화 기능을 관리하는 커스텀 훅
+ * 실시간 메시지 스트리밍, 청크 버퍼링, 연결 관리를 처리
+ * 
+ * @param {Object} params - Hook 파라미터
+ * @param {string} params.selectedEngine - 선택된 AI 엔진 타입
+ * @param {string} params.conversationId - 대화 ID
+ * @param {string} params.currentConversationId - 현재 대화 ID
+ * @param {string} params.initialMessage - 초기 메시지
+ * @param {boolean} params.hasProcessedInitial - 초기 메시지 처리 여부
+ * @param {Function} params.onConversationIdUpdate - 대화 ID 업데이트 콜백
+ * @param {Function} params.onError - 오류 처리 콜백
+ * 
+ * @returns {Object} WebSocket 채팅 상태와 메서드
  */
 export const useWebSocketChat = ({
   selectedEngine,
