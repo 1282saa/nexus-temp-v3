@@ -31,7 +31,7 @@ class Settings:
         # Bedrock 설정
         self.BEDROCK_MODEL_ID = os.environ.get(
             'BEDROCK_MODEL_ID', 
-            'anthropic.claude-3-sonnet-20240229-v1:0'
+            'us.anthropic.claude-opus-4-1-20250805-v1:0'  # Claude 4.1 Opus - 올바른 형식
         )
         
         # 로깅

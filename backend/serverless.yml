@@ -81,11 +81,11 @@ custom:
     staging: INFO
     prod: WARN
 
-  # 환경별 Bedrock 모델
+  # 환경별 Bedrock 모델 - Claude 4.1 Opus
   bedrockModel:
-    dev: anthropic.claude-3-sonnet-20240229-v1:0
-    staging: anthropic.claude-3-sonnet-20240229-v1:0
-    prod: anthropic.claude-3-5-sonnet-20241022-v2:0
+    dev: us.anthropic.claude-opus-4-1-20250805-v1:0
+    staging: us.anthropic.claude-opus-4-1-20250805-v1:0
+    prod: us.anthropic.claude-opus-4-1-20250805-v1:0
 
   # 환경별 Guardrail 설정
   guardrailEnabled:

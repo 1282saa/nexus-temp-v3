@@ -9,8 +9,8 @@ CONFIG = {
     # AWS 설정
     'AWS_REGION': 'us-east-1',
     
-    # Bedrock 설정
-    'BEDROCK_MODEL_ID': 'anthropic.claude-3-sonnet-20240229-v1:0',
+    # Bedrock 설정 - Claude 4.1 Opus
+    'BEDROCK_MODEL_ID': 'us.anthropic.claude-opus-4-1-20250805-v1:0',
     'BEDROCK_MAX_TOKENS': 4096,
     'BEDROCK_TEMPERATURE': 0.7,
     'BEDROCK_TIMEOUT': 120,

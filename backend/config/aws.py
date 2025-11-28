@@ -7,10 +7,10 @@ import os
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID', '')
 
-# Bedrock 설정
+# Bedrock 설정 - Claude 4.1 Opus 기본 사용
 BEDROCK_CONFIG = {
     'region_name': AWS_REGION,
-    'model_id': os.environ.get('BEDROCK_MODEL_ID', 'us.anthropic.claude-sonnet-4-20250514-v1:0'),
+    'model_id': os.environ.get('BEDROCK_MODEL_ID', 'us.anthropic.claude-opus-4-1-20250805-v1:0'),  # Claude 4.1 Opus
     'opus_model_id': os.environ.get('BEDROCK_OPUS_MODEL_ID', 'us.anthropic.claude-opus-4-1-20250805-v1:0'),
     'max_tokens': int(os.environ.get('BEDROCK_MAX_TOKENS', '16384')),
     'temperature': float(os.environ.get('BEDROCK_TEMPERATURE', '0.81')),
